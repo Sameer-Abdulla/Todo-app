@@ -9,8 +9,8 @@ class User(Base):
     __tablename__ = "users"
     
     id = Column(Integer, primary_key=True, index=True)
-    username = Column(String, unique=True, index=True)
-    email = Column(String, unique=True, index=True)
+    username = Column(String, unique=True, nullable=False)
+    phone_number = Column(String(15), unique=True, nullable=False)  # Phone number as the identifier
     
     tasks = relationship("Task", back_populates="owner")  # One-to-many relationship with tasks
 
@@ -22,7 +22,7 @@ class Task(Base):
     description = Column(String, nullable=True)
     completed = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
-    due_on = Column(DateTime, nullable=True)
+    due_at = Column(DateTime(timezone=True), nullable=True)  
     priority = Column(String, default="medium")
     
     user_id = Column(Integer, ForeignKey("users.id"))  # Foreign key to associate task with user

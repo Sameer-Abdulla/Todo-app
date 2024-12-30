@@ -7,7 +7,7 @@ from fastapi import HTTPException
 
 # CRUD for User
 async def create_user(db: AsyncSession, user: UserCreate):
-    db_user = User(username=user.username, email=user.email)
+    db_user = User(username=user.username, phone_number=user.phone_number)
     db.add(db_user)
     await db.commit()
     await db.refresh(db_user)
