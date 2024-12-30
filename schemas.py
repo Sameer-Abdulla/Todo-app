@@ -21,28 +21,34 @@ class TaskCreate(TaskBase):
     pass
 
 class TaskUpdate(TaskBase):
-    pass
+    title: str | None = None
+    description: str | None = None
+    completed: bool | None = None
+    priority: Priority | None = None
+    due_at: datetime | None = None
 
-class TaskResponse(TaskBase):
+class TaskResponse(BaseModel):
     id: int
+    title: str
+    description: Optional[str]
+    completed: bool
     created_at: datetime
-    user_id: int  # To indicate which user the task belongs to
+    due_at: Optional[datetime]
+    priority: Priority
+    user_id: int  # Ensure this is defined as an integer
     
     class Config:
-        orm_mode = True  # This will make sure Pydantic models work seamlessly with SQLAlchemy models
+        orm_mode = True
+  # This will make sure Pydantic models work seamlessly with SQLAlchemy models
 
 # User Model
-# User Base Schema (common fields for user)
 class UserBase(BaseModel):
     username: str
-    phone_number: str  # Using phone_number instead of email
+    phone_number: str
 
-# User creation schema
 class UserCreate(UserBase):
-    # No password or email, only name and phone_number for creating a user
-    pass
+    pass  # You would need to handle password hashing here
 
-# User response schema
 class UserResponse(UserBase):
     id: int
     

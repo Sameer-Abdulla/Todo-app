@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To-Do List</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            padding: 20px;
+        }
+        .container {
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            margin: auto;
+        }
+        h2 {
+            text-align: center;
+        }
+        label {
+            font-size: 14px;
+            display: block;
+            margin-bottom: 8px;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            margin: 8px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .tasks {
+            margin-top: 20px;
+        }
+        .task {
+            padding: 8px;
+            background-color: #f9f9f9;
+            margin: 4px 0;
+            border-radius: 4px;
+        }
+        .priority {
+            font-weight: bold;
+        }
+        .high-priority {
+            color: red;
+        }
+        .medium-priority {
+            color: orange;
+        }
+        .low-priority {
+            color: green;
+        }
+        .task-button {
+            width: 30px;
+            height: 30px;
+            margin: 5px;
+            padding: 5px;
+            font-size: 8px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+    
+        .done-button {
+            background-color: green;
+            color: white;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button  onclick="redirectToUserpage()">User Page</button>
+        <h2>To-Do List</h2>
+        <label for="date">Select Date:</label>
+        <input type="date" id="date" name="date">
+        <br>
+        <br>
+
+        <button  onclick="redirectToCreateTask()">Create Task</button>
+        
+        <div class="tasks" id="taskList">
+            <!-- Tasks will appear here -->
+        </div>
+    </div>
+
+    <script>
+        // Function to get the 'user_id' from the URL query string
+        function getUserIdFromURL() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('user_id'); // Retrieves the user_id from the query string
+        }
+
+        function getUserIdFromURL() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('user_id'); // Retrieves the user_id from the query string
+        }
+
+        // Function to redirect to the 'Create Task' page with the user_id
+        function redirectToCreateTask() {
+            const userId = getUserIdFromURL(); // Get the user_id from the URL
+            if (userId) {
+                window.location.href = `/index.html/?user_id=${userId}`; // Redirect with the user_id
+            } else {
+                alert("User ID is missing. Please ensure the URL includes a valid user_id.");
+            }
+        }
+        function redirectToUserpage() {
+            window.location.href = `/userlanding.html/`; // Redirect with user_id
+    }
+
+    
+        // Default to today's date if no date is selected
+        document.getElementById('date').valueAsDate = new Date();
+    
+        // Function to get and display the to-do list based on the user ID and date
+        function getTodoList() {
+            const date = document.getElementById('date').value;
+            const userId = getUserIdFromURL(); // Get the user_id from the URL
+    
+            const taskListDiv = document.getElementById('taskList');
+            taskListDiv.innerHTML = ''; // Clear previous tasks
+    
+            if (!userId) {
+                taskListDiv.innerHTML = '<p>Please enter a User ID.</p>';
+                return;
+            }
+    
+            async function fetchTasks() {
+    try {
+        const response = await fetch(`http://127.0.0.1:8000/tasks/user/${userId}`); // API endpoint
+        if (!response.ok) {
+            throw new Error(`Error fetching tasks: ${response.status} ${response.statusText}`);
+        }
+        const tasks = await response.json();
+        taskListDiv.innerHTML = '<h2>Task List</h2>';
+        if (tasks.length === 0) {
+            taskListDiv.innerHTML += '<p>No tasks available.</p>';
+        } else {
+            tasks.forEach(task => {
+                const taskItem = document.createElement('div');
+                taskItem.className = 'task-item';
+                
+                // Create the priority element
+                const priorityElement = document.createElement('span');
+                priorityElement.className = 'priority';
+                priorityElement.textContent = task.priority;
+
+                // Set the color based on the priority
+                switch (task.priority) {
+                    case 'high':
+                        priorityElement.classList.add('high-priority');
+                        break;
+                    case 'medium':
+                        priorityElement.classList.add('medium-priority');
+                        break;
+                    case 'low':
+                        priorityElement.classList.add('low-priority');
+                        break;
+                    default:
+                        break;
+                }
+
+                taskItem.innerHTML = `
+                    <br>
+                    <strong>${task.title}</strong><br>
+                    ${task.description || 'No description'}<br>
+                    Due At: ${new Date(task.due_at).toLocaleString()}<br>
+                    Completed: ${task.completed ? 'Yes' : 'No'},<br>
+            
+                `;
+                 // Create "done" button
+                 const doneButton = document.createElement('button');
+                 doneButton.className = 'task-button done-button';
+                 doneButton.textContent = 'Done';
+                 doneButton.onclick = async function() {
+                     // Confirm deletion
+                     const confirmDelete = confirm(`Are you sure that you want to mark as done the task: "${task.title}"?`);
+                     if (confirmDelete) {
+                         try {
+                             const deleteResponse = await fetch(`http://127.0.0.1:8000/tasks/${task.id}`, {
+                                 method: 'DELETE',
+                             });
+                             if (deleteResponse.ok) {
+                                 // Remove the task item from the DOM
+                                 taskListDiv.removeChild(taskItem);
+                                 alert(`Task "${task.title}" has been completed.`);
+                             } else {
+                                 throw new Error(`Error deleting task: ${deleteResponse.status} ${deleteResponse.statusText}`);
+                             }
+                         } catch (error) {
+                             console.error(error);
+                             alert('An error occurred while deleting the task. Please try again later.');
+                         }
+                     }
+                 };
+
+                // Append the priority element
+                taskItem.appendChild(priorityElement);
+                taskListDiv.appendChild(taskItem);
+                taskItem.appendChild(doneButton);
+            });
+        }
+    } catch (error) {
+        console.error(error);
+        taskListDiv.innerHTML = '<p>Error loading tasks. Please try again later.</p>';
+    }
+}
+
+fetchTasks();
+        }
+    
+        // Call getTodoList when the page loads
+        window.onload = getTodoList;
+    </script>    
+</body>
+</html>

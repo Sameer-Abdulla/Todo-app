@@ -94,19 +94,23 @@
                 errorDiv.textContent = '';
                 
                 // Send form data to FastAPI backend using fetch
-                fetch('/register', {
+                fetch('http://127.0.0.1:8000/register/', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
                         username: username,
-                        phone: phone
+                        phone_number: phone
                     })
                 })
                 .then(response => response.json())
                 .then(data => {
-                    alert('User created successfully: ' + data.message);
+                    // Redirect to index.html after successful submission
+                    const userId = data.id;
+                    console.log(data)  // Use the appropriate key from the response
+    // Redirect to landing.html with the user_id as a query parameter
+                    window.location.href = `/landing.html/?user_id=${userId}`;
                 })
                 .catch((error) => {
                     console.error('Error:', error);

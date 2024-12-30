@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -12,7 +12,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://127.0.0.1:5500"],  # Allow requests from the frontend
+    allow_origins=["*"],  # Allow requests from the frontend
     allow_credentials=True,
     allow_methods=["*"],  # Allow all HTTP methods
     allow_headers=["*"],  # Allow all headers
@@ -25,7 +25,7 @@ async def startup():
         await conn.run_sync(Base.metadata.create_all)
 
 # Routes for User
-@app.post("/users/", response_model=UserResponse)
+@app.post("/register/", response_model=UserResponse)
 async def create_user(user: UserCreate, db: AsyncSession = Depends(get_db)):
     return await crud.create_user(db=db, user=user)
 
@@ -39,23 +39,28 @@ async def create_task(task: TaskCreate, user_id: int, db: AsyncSession = Depends
     
     return new_task
 
-@app.get("/tasks/", response_model=list[TaskResponse])
-async def get_tasks(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Task))
-    tasks = result.scalars().all()
-    return tasks
 
-@app.get("/tasks/{task_id}", response_model=TaskResponse)
-async def get_task(task_id: int, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Task).where(Task.id == task_id))
-    task = result.scalar_one_or_none()
-    if not task:
-        raise HTTPException(status_code=404, detail="Task not found")
-    return task
 
 @app.get("/tasks/user/{user_id}", response_model=list[TaskResponse])
-async def get_user_tasks(user_id: int, db: AsyncSession = Depends(get_db)):
-    tasks = await crud.get_tasks_by_user(db=db, user_id=user_id)
+async def get_user_tasks(
+    user_id: int,
+    due_at: str = None,
+    db: AsyncSession = Depends(get_db)
+):
+    if due_at:
+        try:
+            due_date = datetime.strptime(due_at, "%Y-%m-%d")
+        except ValueError:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid date format. Please use YYYY-MM-DD."
+            )
+    else:
+        due_date = None
+
+    tasks = await crud.get_tasks_by_user_and_due_date(
+        db=db, user_id=user_id, due_at=due_date
+    )
     if not tasks:
         raise HTTPException(status_code=404, detail="Tasks not found for this user")
     return tasks
